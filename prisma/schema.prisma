@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Student {
+  id         String   @id @default(cuid())
+  firstName  String
+  lastName   String
+  email      String?  @unique
+  department String?
+  createdAt  DateTime @default(now())
+  files      File[]
+}
+
+model File {
+  id           String        @id @default(cuid())
+  studentId    String
+  title        String
+  originalName String
+  mimeType     String
+  s3Key        String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  versions     FileVersion[]
+
+  @@index([studentId])
+}
+
+model FileVersion {
+  id           String   @id @default(cuid())
+  fileId       String
+  version      Int
+  s3Key        String
+  originalName String
+  mimeType     String
+  createdAt    DateTime @default(now())
+  file         File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, version])
+  @@index([fileId])
+}
